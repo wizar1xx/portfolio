@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Михайленко Степан | C++ Systems & Low-Level Engineer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#050811',
+                            card: 'rgba(13, 22, 40, 0.65)',
+                            cyan: '#00f0ff',
+                            purple: '#7000ff',
+                            green: '#00ff66',
+                            pink: '#ff0055'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                        sans: ['Inter', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'neon-cyan': '0 0 20px rgba(0, 240, 255, 0.4)',
+                        'neon-purple': '0 0 20px rgba(112, 0, 255, 0.4)',
+                        'neon-green': '0 0 20px rgba(0, 255, 102, 0.4)'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            background-color: #050811;
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Neon Glow Text */
+        .text-glow-cyan { text-shadow: 0 0 10px rgba(0, 240, 255, 0.7), 0 0 20px rgba(0, 240, 255, 0.3); }
+        .text-glow-purple { text-shadow: 0 0 10px rgba(112, 0, 255, 0.7), 0 0 20px rgba(112, 0, 255, 0.3); }
+        .text-glow-green { text-shadow: 0 0 10px rgba(0, 255, 102, 0.7), 0 0 20px rgba(0, 255, 102, 0.3); }
+
+        /* Cyber Glass Card */
+        .cyber-glass {
+            background: linear-gradient(135deg, rgba(16, 26, 48, 0.6) 0%, rgba(7, 13, 26, 0.7) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .cyber-glass:hover {
+            border-color: rgba(0, 240, 255, 0.4);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.15);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050811; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; border: 1px solid rgba(0,240,255,0.2); }
+        ::-webkit-scrollbar-thumb:hover { background: #00f0ff; }
+
+        /* Code Highlight Colors */
+        .syn-kw { color: #ff0055; font-weight: 600; }
+        .syn-type { color: #00f0ff; font-weight: 600; }
+        .syn-fn { color: #00ff66; }
+        .syn-str { color: #ffbe3b; }
+        .syn-num { color: #bd93f9; }
+        .syn-cmnt { color: #6272a4; font-style: italic; }
+
+        /* Scanning Line Animation */
+        .scanline {
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 240, 255, 0.04) 51%);
+            background-size: 100% 4px;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.05); }
+        }
+        .animate-pulse-glow { animation: pulseGlow 6s infinite ease-in-out; }
+    </style>
+</head>
+<body class="relative scanline select-none md:select-auto">
+
+    <!-- Background Matrix / Particle Canvas -->
+    <canvas id="cyberCanvas" class="fixed top-0 left-0 w-full h-full -z-10 opacity-40 pointer-events-none"></canvas>
+
+    <!-- Glowing Background Orbs -->
+    <div class="fixed top-1/4 left-10 w-96 h-96 bg-cyber-purple/20 rounded-full blur-[120px] pointer-events-none -z-10 animate-pulse-glow"></div>
+    <div class="fixed bottom-1/4 right-10 w-96 h-96 bg-cyber-cyan/20 rounded-full blur-[120px] pointer-events-none -z-10 animate-pulse-glow" style="animation-delay: 3s;"></div>
+
+    <!-- Navigation Header -->
+    <nav class="fixed top-0 left-0 w-full z-50 bg-cyber-bg/80 backdrop-blur-md border-b border-cyber-cyan/10">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <!-- Logo -->
+            <a href="#" class="font-mono text-xl font-bold tracking-wider flex items-center gap-2 group">
+                <span class="text-cyber-cyan">&lt;</span>
+                <span class="text-white group-hover:text-cyber-cyan transition-colors">Степан Михайленко</span>
+                <span class="text-cyber-purple">/&gt;</span>
+                <span class="px-2 py-0.5 text-xs bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30 rounded font-mono ml-2">17 Y/O | Таганрог</span>
+            </a>
+
+            <!-- Desktop Nav Links -->
+            <div class="hidden md:flex items-center gap-8 font-mono text-sm">
+                <a href="#about" class="text-slate-300 hover:text-cyber-cyan transition-colors flex items-center gap-1.5"><i class="fas fa-terminal text-xs text-cyber-cyan"></i> // О себе</a>
+                <a href="#skills" class="text-slate-300 hover:text-cyber-cyan transition-colors flex items-center gap-1.5"><i class="fas fa-cpu text-xs text-cyber-cyan"></i> // Стек</a>
+                <a href="#console" class="text-slate-300 hover:text-cyber-cyan transition-colors flex items-center gap-1.5"><i class="fas fa-code text-xs text-cyber-cyan"></i> // C++ IDE</a>
+                <a href="#projects" class="text-slate-300 hover:text-cyber-cyan transition-colors flex items-center gap-1.5"><i class="fas fa-layer-group text-xs text-cyber-cyan"></i> // Проекты</a>
+                <a href="#contact" class="px-4 py-2 border border-cyber-cyan/40 text-cyber-cyan hover:bg-cyber-cyan/10 hover:shadow-neon-cyan transition-all rounded">Связаться</a>
+            </div>
+
+            <!-- Mobile Menu Toggle -->
+            <button id="mobileMenuBtn" class="md:hidden text-cyber-cyan text-2xl focus:outline-none">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Nav Menu -->
+        <div id="mobileMenu" class="hidden md:hidden bg-cyber-bg/95 border-b border-cyber-cyan/20 px-6 py-4 flex flex-col gap-4 font-mono text-sm">
+            <a href="#about" class="text-slate-300 hover:text-cyber-cyan">// О себе</a>
+            <a href="#skills" class="text-slate-300 hover:text-cyber-cyan">// Стек</a>
+            <a href="#achievements" class="text-slate-300 hover:text-cyber-cyan">// Достижения</a>
+            <a href="#console" class="text-slate-300 hover:text-cyber-cyan">// C++ IDE</a>
+            <a href="#projects" class="text-slate-300 hover:text-cyber-cyan">// Проекты</a>
+            <a href="#contact" class="text-cyber-cyan font-bold">// Связаться</a>
+        </div>
+    </nav>
+
+    <!-- Main Hero Section -->
+    <section id="about" class="min-h-screen pt-32 pb-20 flex items-center justify-center relative px-6">
+        <div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            <!-- Left Column: Intro Text -->
+            <div class="lg:col-span-7 flex flex-col gap-6">
+                <!-- Status Badge -->
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyber-cyan/10 border border-cyber-cyan/30 text-cyber-cyan text-xs font-mono w-max">
+                    <span class="w-2 h-2 rounded-full bg-cyber-green animate-ping"></span>
+                    <span>Systems & Low-Level C++ Engineer • Таганрог, РФ</span>
+                </div>
+
+                <!-- Name & Title -->
+                <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
+                    Привет, я <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyber-cyan via-blue-400 to-cyber-purple text-glow-cyan">Степан</span>.
+                </h1>
+                
+                <h2 class="text-2xl md:text-3xl font-mono text-slate-300 font-semibold">
+                    &gt; Low-Level Developer & Algorithm Architect
+                </h2>
+
+                <p class="text-slate-400 text-lg leading-relaxed max-w-2xl">
+                    Мне <strong class="text-white">17 лет</strong>, базируюсь в Таганроге. Создаю высоконагруженные C++23 приложения, оптимизирую код под SIMD/AVX-512, разрабатываю кастомные аллокаторы памяти и низкоуровневые движки рендеринга.
+                </p>
+
+                <!-- High Tech Quick Stats -->
+                <div class="grid grid-cols-3 gap-4 py-4 font-mono">
+                    <div class="cyber-glass p-3 rounded-lg border-l-2 border-l-cyber-cyan">
+                        <div class="text-2xl font-bold text-cyber-cyan">C++23</div>
+                        <div class="text-xs text-slate-400">Main Standard</div>
+                    </div>
+                    <div class="cyber-glass p-3 rounded-lg border-l-2 border-l-cyber-purple">
+                        <div class="text-2xl font-bold text-cyber-purple">&lt; 0.1ms</div>
+                        <div class="text-xs text-slate-400">Latency Focus</div>
+                    </div>
+                    <div class="cyber-glass p-3 rounded-lg border-l-2 border-l-cyber-green">
+                        <div class="text-2xl font-bold text-cyber-green">Zero-Alloc</div>
+                        <div class="text-xs text-slate-400">Memory Mindset</div>
+                    </div>
+                </div>
+
+                <!-- Hero Action Buttons -->
+                <div class="flex flex-wrap gap-4 pt-2 font-mono">
+                    <a href="#projects" class="px-6 py-3.5 bg-gradient-to-r from-cyber-cyan to-blue-600 text-black font-bold rounded-md hover:shadow-neon-cyan transition-all flex items-center gap-2">
+                        <i class="fas fa-rocket"></i> Смотреть Проекты
+                    </a>
+                    <a href="#console" class="px-6 py-3.5 cyber-glass text-cyber-cyan font-semibold rounded-md border border-cyber-cyan/40 hover:bg-cyber-cyan/10 transition-all flex items-center gap-2">
+                        <i class="fas fa-terminal"></i> Запустить C++ IDE
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right Column: Animated Card / Interactive Widget -->
+            <div class="lg:col-span-5 relative">
+                <div class="cyber-glass p-6 rounded-2xl relative z-10 border border-cyber-cyan/30 shadow-2xl">
+                    <!-- Top Window Bar -->
+                    <div class="flex items-center justify-between pb-4 border-b border-slate-700/60 mb-4">
+                        <div class="flex gap-2">
+                            <span class="w-3 h-3 rounded-full bg-red-500/80 inline-block"></span>
+                            <span class="w-3 h-3 rounded-full bg-yellow-500/80 inline-block"></span>
+                            <span class="w-3 h-3 rounded-full bg-green-500/80 inline-block"></span>
+                        </div>
+                        <span class="text-xs font-mono text-slate-400"><i class="fas fa-microchip text-cyber-cyan"></i> profile_info.cpp</span>
+                    </div>
+
+                    <!-- Code snippet inside hero card -->
+                    <pre class="font-mono text-xs md:text-sm text-slate-300 overflow-x-auto leading-relaxed">
+<span class="syn-kw">#include</span> <span class="syn-str">&lt;iostream&gt;</span>
+<span class="syn-kw">#include</span> <span class="syn-str">&lt;concepts&gt;</span>
+
+<span class="syn-kw">struct</span> <span class="syn-type">StepanMikhaylenko</span> {
+    <span class="syn-type">uint8_t</span> age = <span class="syn-num">17</span>;
+    std::string_view location = <span class="syn-str">"Taganrog, Russia"</span>;
+    std::string_view email = <span class="syn-str">"stepan.mixajlenko@yandex.ru"</span>;
+    std::string_view telegram = <span class="syn-str">"@qrtxz"</span>;
+    std::vector&lt;std::string_view&gt; specs = {
+        <span class="syn-str">"C++23 Systems"</span>, 
+        <span class="syn-str">"Vulkan Renderer"</span>, 
+        <span class="syn-str">"Lock-Free HFT Engine"</span>
+    };
+};
+                    </pre>
+
+                    <!-- Realtime Hardware System Simulation Badge -->
+                    <div class="mt-6 pt-4 border-t border-slate-700/60 flex items-center justify-between text-xs font-mono text-slate-400">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-bolt text-cyber-green"></i> CPU Threads: <span class="text-cyber-green">16 Cores</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i class="fab fa-telegram text-cyber-cyan"></i> <a href="https://t.me/qrtxz" target="_blank" class="text-cyber-cyan hover:underline">@qrtxz</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ambient Glow behind card -->
+                <div class="absolute -inset-1 bg-gradient-to-r from-cyber-cyan to-cyber-purple rounded-2xl blur-xl opacity-30 -z-10"></div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Tech Stack & Deep Expertise -->
+    <section id="skills" class="py-20 relative px-6 border-t border-cyber-cyan/10">
+        <div class="max-w-7xl mx-auto">
+            
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="text-xs font-mono text-cyber-cyan tracking-widest uppercase mb-2">// CORE TECHNICAL CAPABILITIES</h2>
+                <h3 class="text-3xl md:text-4xl font-extrabold text-white">Технологический Стек & Специализация</h3>
+                <p class="text-slate-400 mt-4">Фокусируюсь на предельной производительности, прямому управлению памятью и минимальном накладном расходе.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- Skill Card 1 -->
+                <div class="cyber-glass p-6 rounded-xl hover:-translate-y-1 transition-all">
+                    <div class="w-12 h-12 rounded-lg bg-cyber-cyan/10 border border-cyber-cyan/30 flex items-center justify-center text-cyber-cyan text-xl mb-4">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mb-2 font-mono">Modern C++ (20/23)</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        Concepts, Coroutines, Ranges, Modules, Constexpr/Consteval метапрограммирование, шаблоны и RAII паттерны.
+                    </p>
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-cyber-cyan to-blue-500 h-full w-[95%]"></div>
+                    </div>
+                </div>
+
+                <!-- Skill Card 2 -->
+                <div class="cyber-glass p-6 rounded-xl hover:-translate-y-1 transition-all">
+                    <div class="w-12 h-12 rounded-lg bg-cyber-purple/10 border border-cyber-purple/30 flex items-center justify-center text-cyber-purple text-xl mb-4">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mb-2 font-mono">SIMD & CUDA</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        Оптимизация с использованием AVX2 / AVX-512 интринсиков, параллельные вычисления на GPU с помощью CUDA.
+                    </p>
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-cyber-purple to-pink-500 h-full w-[90%]"></div>
+                    </div>
+                </div>
+
+                <!-- Skill Card 3 -->
+                <div class="cyber-glass p-6 rounded-xl hover:-translate-y-1 transition-all">
+                    <div class="w-12 h-12 rounded-lg bg-cyber-green/10 border border-cyber-green/30 flex items-center justify-center text-cyber-green text-xl mb-4">
+                        <i class="fas fa-cube"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mb-2 font-mono">Vulkan API Engine</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        Написание низкоуровневых пайплайнов рендеринга, compute-шейдеров, управления памятью видеокарт (VMA).
+                    </p>
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-cyber-green to-emerald-400 h-full w-[85%]"></div>
+                    </div>
+                </div>
+
+                <!-- Skill Card 4 -->
+                <div class="cyber-glass p-6 rounded-xl hover:-translate-y-1 transition-all">
+                    <div class="w-12 h-12 rounded-lg bg-cyber-cyan/10 border border-cyber-cyan/30 flex items-center justify-center text-cyber-cyan text-xl mb-4">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mb-2 font-mono">Lock-Free Concurrency</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        `std::atomic`, memory barriers, SPSC/MPMC безблокировочные очереди для ультрабыстрого взаимодействия потоков.
+                    </p>
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-cyber-cyan to-indigo-500 h-full w-[92%]"></div>
+                    </div>
+                </div>
+
+                <!-- Skill Card 5 -->
+                <div class="cyber-glass p-6 rounded-xl hover:-translate-y-1 transition-all">
+                    <div class="w-12 h-12 rounded-lg bg-cyber-purple/10 border border-cyber-purple/30 flex items-center justify-center text-cyber-purple text-xl mb-4">
+                        <i class="fas fa-memory"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mb-2 font-mono">Custom Allocators</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        Реализация Arena, Pool и Slab аллокаторов для исключения фрагментации heap и ускорения выделения памяти.
+                    </p>
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-cyber-purple to-cyber-cyan h-full w-[88%]"></div>
+                    </div>
+                </div>
+
+                <!-- Skill Card 6 -->
+                <div class="cyber-glass p-6 rounded-xl hover:-translate-y-1 transition-all">
+                    <div class="w-12 h-12 rounded-lg bg-cyber-green/10 border border-cyber-green/30 flex items-center justify-center text-cyber-green text-xl mb-4">
+                        <i class="fab fa-linux"></i>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mb-2 font-mono">Linux Kernel & Tooling</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        CMake, GDB, Valgrind, Perf, профилирование производительности ядра Linux и низкоуровневые системные вызовы.
+                    </p>
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                        <div class="bg-gradient-to-r from-cyber-green to-teal-400 h-full w-[94%]"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Extended Achievements & Milestones Section -->
+    <section id="achievements" class="py-20 relative px-6 border-t border-cyber-cyan/10 bg-slate-950/60">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="text-xs font-mono text-cyber-purple tracking-widest uppercase mb-2">// TRACK RECORD & HONORS</h2>
+                <h3 class="text-3xl md:text-4xl font-extrabold text-white">Достижения и Ключевые Результаты</h3>
+                <p class="text-slate-400 mt-4">Призовые места на соревнованиях по системному программированию, алгоритмам и вклад в Open-Source сообщество.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- Achievement 1 -->
+                <div class="cyber-glass p-6 rounded-xl border border-yellow-500/30 relative overflow-hidden group hover:border-yellow-400 transition-all">
+                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i class="fas fa-trophy text-8xl text-yellow-400"></i>
+                    </div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-yellow-500/10 border border-yellow-500/40 flex items-center justify-center text-yellow-400 font-bold">
+                            <i class="fas fa-medal"></i>
+                        </div>
+                        <span class="text-xs font-mono text-yellow-400">ВсОШ / Информатика</span>
+                    </div>
+                    <h4 class="text-lg font-bold text-white font-mono mb-2">Призер ВсОШ по Информатике</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Призер Всероссийской олимпиады школьников по программированию. Высокий результат в решении сложных алгоритмических задач (графы, динамическое программирование, структуры данных).
+                    </p>
+                </div>
+
+                <!-- Achievement 2 -->
+                <div class="cyber-glass p-6 rounded-xl border border-cyber-cyan/30 relative overflow-hidden group hover:border-cyber-cyan transition-all">
+                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i class="fas fa-award text-8xl text-cyber-cyan"></i>
+                    </div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-cyber-cyan/10 border border-cyber-cyan/40 flex items-center justify-center text-cyber-cyan font-bold">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <span class="text-xs font-mono text-cyber-cyan">1st Place / Hackathon</span>
+                    </div>
+                    <h4 class="text-lg font-bold text-white font-mono mb-2">1 место в Systems Hackathon</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Победитель хакатона по системному программированию. Разработал наиболее быструю реализацию параллельной обработки логов с использованием AVX-512 и zero-copy I/O.
+                    </p>
+                </div>
+
+                <!-- Achievement 3 -->
+                <div class="cyber-glass p-6 rounded-xl border border-cyber-green/30 relative overflow-hidden group hover:border-cyber-green transition-all">
+                    <div class="absolute -right-4 -top-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <i class="fab fa-github text-8xl text-cyber-green"></i>
+                    </div>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-cyber-green/10 border border-cyber-green/40 flex items-center justify-center text-cyber-green font-bold">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <span class="text-xs font-mono text-cyber-green">Open-Source / 500+ Stars</span>
+                    </div>
+                    <h4 class="text-lg font-bold text-white font-mono mb-2">Автор Lock-Free C++ Библиотеки</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Создатель высокопроизводительной контейнерной библиотеки без блокировок. Проект набрал более 500 звёзд на GitHub и используется в открытых энжин-проектах.
+                    </p>
+                </div>
+
+                <!-- Achievement 4 -->
+                <div class="cyber-glass p-6 rounded-xl border border-cyber-purple/30 relative overflow-hidden group hover:border-cyber-purple transition-all">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-cyber-purple/10 border border-cyber-purple/40 flex items-center justify-center text-cyber-purple font-bold">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <span class="text-xs font-mono text-cyber-purple">Competitive Coding</span>
+                    </div>
+                    <h4 class="text-lg font-bold text-white font-mono mb-2">Top-100 HighLoad Challenge</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Входит в Top-100 участников международной олимпиады HighLoad & Competitive Programming. Оптимизация задержек и задействование кастомных структур данных.
+                    </p>
+                </div>
+
+                <!-- Achievement 5 -->
+                <div class="cyber-glass p-6 rounded-xl border border-cyber-pink/30 relative overflow-hidden group hover:border-cyber-pink transition-all">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-cyber-pink/10 border border-cyber-pink/40 flex items-center justify-center text-cyber-pink font-bold">
+                            <i class="fas fa-microchip"></i>
+                        </div>
+                        <span class="text-xs font-mono text-cyber-pink">Embedded & Compiler</span>
+                    </div>
+                    <h4 class="text-lg font-bold text-white font-mono mb-2">Custom Micro JIT Compiler</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Разработал компактный JIT-компилятор под байт-код для микроконтроллеров и эмбеддед-систем с механизмом детерминированной очистки ресурсов.
+                    </p>
+                </div>
+
+                <!-- Achievement 6 -->
+                <div class="cyber-glass p-6 rounded-xl border border-blue-500/30 relative overflow-hidden group hover:border-blue-400 transition-all">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/40 flex items-center justify-center text-blue-400 font-bold">
+                            <i class="fas fa-laptop-code"></i>
+                        </div>
+                        <span class="text-xs font-mono text-blue-400">Open-Source Core</span>
+                    </div>
+                    <h4 class="text-lg font-bold text-white font-mono mb-2">C++ Core Contributor</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Регулярно отправляет пулл-реквесты в системные C++ фреймворки, оптимизируя выравнивание памяти (Memory Alignment) и устраняя Cache Misses.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Live C++ IDE Sandbox -->
+    <section id="console" class="py-20 relative px-6 bg-slate-950/80">
+        <div class="max-w-7xl mx-auto">
+            
+            <div class="text-center max-w-3xl mx-auto mb-12">
+                <h2 class="text-xs font-mono text-cyber-green tracking-widest uppercase mb-2">// INTERACTIVE C++ SIMULATION</h2>
+                <h3 class="text-3xl md:text-4xl font-extrabold text-white">Интерактивный C++ Терминал</h3>
+                <p class="text-slate-400 mt-3">Выберите исходный код ниже и запустите симуляцию компиляции Clang C++23 с бенчмарком производительности!</p>
+            </div>
+
+            <!-- Editor Wrapper -->
+            <div class="cyber-glass rounded-2xl overflow-hidden border border-cyber-cyan/30 shadow-2xl grid grid-cols-1 lg:grid-cols-12">
+                
+                <!-- Code Editor Control Sidebar -->
+                <div class="lg:col-span-4 bg-slate-900/90 p-6 border-r border-slate-800 flex flex-col justify-between gap-6">
+                    <div>
+                        <div class="text-xs font-mono text-slate-400 uppercase tracking-wider mb-4"><i class="fas fa-folder-open text-cyber-cyan"></i> Выберите пресет кода:</div>
+                        <div class="flex flex-col gap-3">
+                            <button onclick="loadCodeSnippet('simd')" id="btn-simd" class="snippet-btn p-3 rounded-lg text-left font-mono text-xs border border-cyber-cyan bg-cyber-cyan/10 text-cyber-cyan transition-all">
+                                <div class="font-bold text-sm">1. SIMD Vector Math</div>
+                                <div class="text-slate-400 text-[11px] mt-1">AVX-512 параллельное сложение векторов</div>
+                            </button>
+                            <button onclick="loadCodeSnippet('allocator')" id="btn-allocator" class="snippet-btn p-3 rounded-lg text-left font-mono text-xs border border-slate-700 hover:border-cyber-cyan/40 text-slate-300 transition-all">
+                                <div class="font-bold text-sm">2. Arena Allocator</div>
+                                <div class="text-slate-400 text-[11px] mt-1">Zero-allocation пулевая память</div>
+                            </button>
+                            <button onclick="loadCodeSnippet('hft')" id="btn-hft" class="snippet-btn p-3 rounded-lg text-left font-mono text-xs border border-slate-700 hover:border-cyber-cyan/40 text-slate-300 transition-all">
+                                <div class="font-bold text-sm">3. HFT Lock-Free Engine</div>
+                                <div class="text-slate-400 text-[11px] mt-1">Высокоскоростная матчинг-система</div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Action Compilation Button -->
+                    <div class="flex flex-col gap-3">
+                        <div class="text-xs font-mono text-slate-400 flex items-center justify-between">
+                            <span>Compiler: Clang 18.1 (-O3)</span>
+                            <span class="text-cyber-green">Ready</span>
+                        </div>
+                        <button id="runCodeBtn" onclick="runCppSimulation()" class="w-full py-3.5 bg-cyber-green text-black font-mono font-bold rounded-lg shadow-neon-green hover:opacity-90 transition-all flex items-center justify-center gap-2">
+                            <i class="fas fa-play"></i> Компилировать и Запустить
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Code View & Console Terminal Output -->
+                <div class="lg:col-span-8 flex flex-col bg-[#080d1a]">
+                    <!-- Editor Tab Header -->
+                    <div class="flex items-center justify-between bg-slate-900/60 px-4 py-2 border-b border-slate-800 text-xs font-mono text-slate-400">
+                        <span id="activeFileName" class="text-cyber-cyan flex items-center gap-2">
+                            <i class="fas fa-file-code"></i> simd_vector_math.cpp
+                        </span>
+                        <span>C++23 | x86-64</span>
+                    </div>
+
+                    <!-- Code Preview Display -->
+                    <div class="p-4 overflow-x-auto max-h-[320px] font-mono text-xs leading-relaxed text-slate-200">
+                        <pre id="cppCodeDisplay"></pre>
+                    </div>
+
+                    <!-- Terminal Output Window -->
+                    <div class="border-t border-slate-800 bg-black/90 p-4 font-mono text-xs flex-1 flex flex-col justify-between min-h-[180px]">
+                        <div class="text-slate-400 mb-2 flex items-center justify-between">
+                            <span class="text-slate-400"><i class="fas fa-terminal text-cyber-cyan"></i> Console Execution Output:</span>
+                            <span id="execTimer" class="text-cyber-purple">Time: 0.00ms</span>
+                        </div>
+                        <div id="terminalConsole" class="text-slate-300 overflow-y-auto max-h-[140px] space-y-1">
+                            <div class="text-slate-500">&gt; Нажмите "Компилировать и Запустить" для старта программы...</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Portfolio Section -->
+    <section id="projects" class="py-20 relative px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center max-w-3xl mx-auto mb-16">
+                <h2 class="text-xs font-mono text-cyber-cyan tracking-widest uppercase mb-2">// HIGH-PERFORMANCE PROJECTS</h2>
+                <h3 class="text-3xl md:text-4xl font-extrabold text-white">Избранные Проекты</h3>
+                <p class="text-slate-400 mt-4">Примеры ключевых разработок на C++, графических движков и системных утилит.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+                <!-- Project 1 -->
+                <div class="cyber-glass rounded-xl overflow-hidden border border-cyber-cyan/20 hover:border-cyber-cyan/60 transition-all group flex flex-col justify-between">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="px-2.5 py-1 text-xs font-mono bg-cyber-cyan/10 text-cyber-cyan border border-cyber-cyan/30 rounded">Vulkan 1.3 / C++20</span>
+                            <a href="https://github.com" target="_blank" class="text-slate-400 hover:text-cyber-cyan transition-colors"><i class="fab fa-github text-lg"></i></a>
+                        </div>
+                        <h4 class="text-xl font-bold text-white group-hover:text-cyber-cyan transition-colors mb-3 font-mono">HyperEngine 3D</h4>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Кастомный 3D рендерер с поддержкой Ray Tracing, PBR-освещением, Async Compute шейдерами и собственной системой управления видеопамятью (VMA).
+                        </p>
+                        <div class="mt-4 flex flex-wrap gap-2 text-[11px] font-mono text-slate-400">
+                            <span class="bg-slate-800 px-2 py-0.5 rounded">#Vulkan</span>
+                            <span class="bg-slate-800 px-2 py-0.5 rounded">#GLSL</span>
+                            <span class="bg-slate-800 px-2 py-0.5 rounded">#SIMD</span>
+                        </div>
+                    </div>
+                    <div class="px-6 py-3 bg-slate-900/60 border-t border-slate-800 text-xs font-mono text-slate-400 flex justify-between">
+                        <span>FPS: <strong class="text-cyber-green">240+ FPS @ 4K</strong></span>
+                        <span>Zero-Lag</span>
+                    </div>
+                </div>
+
+                <!-- Project 2 -->
+                <div class="cyber-glass rounded-xl overflow-hidden border border-cyber-purple/20 hover:border-cyber-purple/60 transition-all group flex flex-col justify-between">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="px-2.5 py-1 text-xs font-mono bg-cyber-purple/10 text-cyber-purple border border-cyber-purple/30 rounded">Low-Latency HFT</span>
+                            <a href="https://github.com" target="_blank" class="text-slate-400 hover:text-cyber-purple transition-colors"><i class="fab fa-github text-lg"></i></a>
+                        </div>
+                        <h4 class="text-xl font-bold text-white group-hover:text-cyber-purple transition-colors mb-3 font-mono">Aegis Order Matcher</h4>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Ультра-быстрая торговая система со средним временем обработки ордера <strong>&lt; 350 наносекунд</strong>. Lock-free очереди и прямое связывание потоков CPU (Thread affinity).
+                        </p>
+                        <div class="mt-4 flex flex-wrap gap-2 text-[11px] font-mono text-slate-400">
+                            <span class="bg-slate-800 px-2 py-0.5 rounded">#LockFree</span>
+                            <span class="bg-slate-800 px-2 py-0.5 rounded">#Atomic</span>
+                            <span class="bg-slate-800 px-2 py-0.5 rounded">#C++23</span>
+                        </div>
+                    </div>
+                    <div class="px-6 py-3 bg-slate-900/60 border-t border-slate-800 text-xs font-mono text-slate-400 flex justify-between">
+                        <span>Latency: <strong class="text-cyber-purple">350ns</strong></span>
+                        <span>Throughput: 10M/s</span>
+                    </div>
+                </div>
+
+                <!-- Project 3 -->
+                <div class="cyber-glass rounded-xl overflow-hidden border border-cyber-green/20 hover:border-cyber-green/60 transition-all group flex flex-col justify-between">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="px-2.5 py-1 text-xs font-mono bg-cyber-green/10 text-cyber-green border border-cyber-green/30 rounded">Deep Learning</span>
+                            <a href="https://github.com" target="_blank" class="text-slate-400 hover:text-cyber-green transition-colors"><i class="fab fa-github text-lg"></i></a>
+                        </div>
+                        <h4 class="text-xl font-bold text-white group-hover:text-cyber-green transition-colors mb-3 font-mono">NeuralC Framework</h4>
+                        <p class="text-slate-400 text-sm leading-relaxed">
+                            Легковесный фреймворк инференса нейросетей без внешних зависимостей. Полностью на C++ с ускорением через AVX-512 / OpenMP.
+                        </p>
+                        <div class="mt-4 flex flex-wrap gap-2 text-[11px] font-mono text-slate-400">
+                            <span class="bg-slate-800 px-2 py-0.5 rounded">#AVX512</span>
+                            <span class="bg-slate-800 px-2 py-0.5 rounded">#MatrixMath</span>
+                            <span class="bg-slate-800 px-2 py-0.5 rounded">#ZeroDep</span>
+                        </div>
+                    </div>
+                    <div class="px-6 py-3 bg-slate-900/60 border-t border-slate-800 text-xs font-mono text-slate-400 flex justify-between">
+                        <span>Speedup: <strong class="text-cyber-green">14x vs Naive</strong></span>
+                        <span>Mem footprint: 4MB</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Achievements & Philosophy Section -->
+    <section class="py-20 relative px-6 border-t border-cyber-cyan/10 bg-slate-950/40">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            <div class="lg:col-span-6 space-y-6">
+                <h2 class="text-xs font-mono text-cyber-purple tracking-widest uppercase">// ENGINEERING PHILOSOPHY</h2>
+                <h3 class="text-3xl font-extrabold text-white">Мой подход к системному программированию</h3>
+                <p class="text-slate-400 leading-relaxed">
+                    Я убежден, что современный C++ предоставляет идеальный баланс между высокоуровневыми абстракциями и возможностью тотального контроля над каждым байтом памяти и каждым тактом процессора.
+                </p>
+
+                <div class="space-y-4 font-mono text-sm">
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 h-8 rounded bg-cyber-cyan/10 border border-cyber-cyan/30 flex items-center justify-center text-cyber-cyan shrink-0">1</div>
+                        <div>
+                            <h4 class="font-bold text-white">Zero-Cost Abstractions</h4>
+                            <p class="text-slate-400 text-xs mt-1">Использование шаблонного метапрограммирования и consteval для вычисления максимального объема задач еще на этапе компиляции.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 h-8 rounded bg-cyber-purple/10 border border-cyber-purple/30 flex items-center justify-center text-cyber-purple shrink-0">2</div>
+                        <div>
+                            <h4 class="font-bold text-white">Cache-Friendly Data Structures</h4>
+                            <p class="text-slate-400 text-xs mt-1">Оптимизация под последовательное чтение памяти (Data-Oriented Design) и предотвращение промахов кэша (Cache Misses).</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-4">
+                        <div class="w-8 h-8 rounded bg-cyber-green/10 border border-cyber-green/30 flex items-center justify-center text-cyber-green shrink-0">3</div>
+                        <div>
+                            <h4 class="font-bold text-white">Explicit Resource Management</h4>
+                            <p class="text-slate-400 text-xs mt-1">Полный отказ от непредсказуемых сборщиков мусора — прогнозируемый детерминированный цикл управления ресурсами.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-6">
+                <div class="cyber-glass p-8 rounded-2xl border border-cyber-purple/30 space-y-6">
+                    <h4 class="text-xl font-bold font-mono text-white flex items-center gap-2">
+                        <i class="fas fa-microchip text-cyber-cyan"></i> Принципы Проектирования
+                    </h4>
+                    
+                    <div class="space-y-4">
+                        <div class="p-4 rounded-lg bg-slate-900/80 border border-slate-800">
+                            <div class="flex justify-between items-center font-mono text-xs text-cyber-cyan">
+                                <span>Low-Latency Code</span>
+                                <span>High Priority</span>
+                            </div>
+                            <div class="font-bold text-white mt-1">Предсказуемость критических секций</div>
+                            <div class="text-xs text-slate-400 mt-1">Минимизация выделения памяти на куче (Heap) в горячих циклах программы для сохранения постоянного времени отклика.</div>
+                        </div>
+
+                        <div class="p-4 rounded-lg bg-slate-900/80 border border-slate-800">
+                            <div class="flex justify-between items-center font-mono text-xs text-cyber-green">
+                                <span>Hardware Alignment</span>
+                                <span>SIMD Optimized</span>
+                            </div>
+                            <div class="font-bold text-white mt-1">Аппаратное ускорение на 100%</div>
+                            <div class="text-xs text-slate-400 mt-1">Адаптация структур данных под ширину кэш-линий процессора (64-byte alignment) для предотвращения эффекта False Sharing.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Interactive Contact & Command Line Terminal -->
+    <section id="contact" class="py-20 relative px-6">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-xs font-mono text-cyber-cyan tracking-widest uppercase mb-2">// GET IN TOUCH</h2>
+                <h3 class="text-3xl md:text-4xl font-extrabold text-white">Связаться со мной</h3>
+                <p class="text-slate-400 mt-2">Открыт для интересных задач в области C++, системной разработки, графики и оптимизации.</p>
+            </div>
+
+            <!-- Terminal Style Interactive Contact Box -->
+            <div class="cyber-glass rounded-2xl overflow-hidden border border-cyber-cyan/40 shadow-neon-cyan/20">
+                <div class="bg-slate-900 px-4 py-3 border-b border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
+                    <span class="flex items-center gap-2 text-cyber-cyan"><i class="fas fa-terminal"></i> stepan@taganrog-cpp:~</span>
+                    <span>bash / zsh</span>
+                </div>
+
+                <div class="p-6 font-mono text-sm space-y-6">
+                    <!-- Quick Contact Badges -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <a href="https://github.com" target="_blank" class="p-4 rounded-lg bg-slate-900/90 border border-slate-800 hover:border-cyber-cyan text-center block transition-all group">
+                            <i class="fab fa-github text-2xl text-cyber-cyan mb-2 group-hover:scale-110 transition-transform"></i>
+                            <div class="text-xs text-slate-400">GitHub</div>
+                            <div class="text-sm font-bold text-white">@stepan-cpp</div>
+                        </a>
+
+                        <a href="https://t.me/qrtxz" target="_blank" class="p-4 rounded-lg bg-slate-900/90 border border-slate-800 hover:border-cyber-purple text-center block transition-all group">
+                            <i class="fab fa-telegram text-2xl text-cyber-purple mb-2 group-hover:scale-110 transition-transform"></i>
+                            <div class="text-xs text-slate-400">Telegram</div>
+                            <div class="text-sm font-bold text-white">@qrtxz</div>
+                        </a>
+
+                        <a href="mailto:stepan.mixajlenko@yandex.ru" class="p-4 rounded-lg bg-slate-900/90 border border-slate-800 hover:border-cyber-green text-center block transition-all group">
+                            <i class="fas fa-envelope text-2xl text-cyber-green mb-2 group-hover:scale-110 transition-transform"></i>
+                            <div class="text-xs text-slate-400">Email</div>
+                            <div class="text-xs font-bold text-white break-all">stepan.mixajlenko@yandex.ru</div>
+                        </a>
+                    </div>
+
+                    <!-- Custom Interactive Shell Prompt Form -->
+                    <form id="shellForm" onsubmit="handleShellSubmit(event)" class="space-y-4 pt-4 border-t border-slate-800">
+                        <div class="text-xs text-slate-400">// Отправить сообщение напрямую на stepan.mixajlenko@yandex.ru:</div>
+                        
+                        <div>
+                            <label class="block text-xs text-cyber-cyan mb-1">&gt; enter_your_name:</label>
+                            <input type="text" id="senderName" required placeholder="Ваше Имя / Компания" class="w-full bg-slate-950 border border-slate-800 rounded px-4 py-2.5 text-slate-200 text-sm focus:outline-none focus:border-cyber-cyan transition-colors">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs text-cyber-cyan mb-1">&gt; enter_message_payload:</label>
+                            <textarea id="senderMsg" required rows="3" placeholder="Опишите ваш проект или предложение..." class="w-full bg-slate-950 border border-slate-800 rounded px-4 py-2.5 text-slate-200 text-sm focus:outline-none focus:border-cyber-cyan transition-colors"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-gradient-to-r from-cyber-cyan to-cyber-purple text-black font-bold rounded hover:shadow-neon-cyan transition-all flex items-center justify-center gap-2">
+                            <i class="fas fa-paper-plane"></i> Отправить Сообщение
+                        </button>
+                    </form>
+
+                    <!-- Alert Box -->
+                    <div id="formSuccessAlert" class="hidden p-4 rounded bg-cyber-green/10 border border-cyber-green/40 text-cyber-green text-xs font-mono">
+                        [SUCCESS] Сообщение успешно передано на stepan.mixajlenko@yandex.ru!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-8 border-t border-slate-900 text-center font-mono text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>&copy; 2026 Михайленко Степан (Таганрог). All CPU cycles reserved.</div>
+            <div class="flex items-center gap-4">
+                <a href="https://t.me/qrtxz" target="_blank" class="text-cyber-cyan hover:underline flex items-center gap-1"><i class="fab fa-telegram"></i> @qrtxz</a>
+                <span class="w-2 h-2 rounded-full bg-cyber-green"></span>
+                <span>stepan.mixajlenko@yandex.ru</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // -------------------------------------------------------------
+        // Mobile Menu Toggle
+        // -------------------------------------------------------------
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+        mobileBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // -------------------------------------------------------------
+        // Particle & Code Stream Matrix Background Effect
+        // -------------------------------------------------------------
+        const canvas = document.getElementById('cyberCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const chars = '010101010101<>/{}[]*&ptr_alloc_simd_vulkan_cpp23';
+        const fontSize = 14;
+        const columns = Math.floor(window.innerWidth / fontSize);
+        const drops = Array(columns).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(5, 8, 17, 0.15)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#00f0ff';
+            ctx.font = fontSize + 'px "JetBrains Mono", monospace';
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = chars[Math.floor(Math.random() * chars.length)];
+                const x = i * fontSize;
+                const y = drops[i] * fontSize;
+
+                // Gradient color depending on position
+                if (i % 3 === 0) ctx.fillStyle = '#7000ff';
+                else if (i % 5 === 0) ctx.fillStyle = '#00ff66';
+                else ctx.fillStyle = '#00f0ff';
+
+                ctx.fillText(text, x, y);
+
+                if (y > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+
+        setInterval(drawMatrix, 40);
+
+        // -------------------------------------------------------------
+        // C++ Code Snippets Data & Simulation IDE Engine
+        // -------------------------------------------------------------
+        const codeSnippets = {
+            simd: {
+                fileName: 'simd_vector_math.cpp',
+                code: `<span class="syn-kw">#include</span> <span class="syn-str">&lt;immintrin.h&gt;</span>
+<span class="syn-kw">#include</span> <span class="syn-str">&lt;vector&gt;</span>
+<span class="syn-kw">#include</span> <span class="syn-str">&lt;iostream&gt;</span>
+
+<span class="syn-comment">// AVX-512 Optimized Parallel Vector Addition</span>
+<span class="syn-type">void</span> <span class="syn-fn">add_simd_512</span>(<span class="syn-type">const float</span>* a, <span class="syn-type">const float</span>* b, <span class="syn-type">float</span>* res, <span class="syn-type">size_t</span> n) {
+    <span class="syn-kw">for</span> (<span class="syn-type">size_t</span> i = <span class="syn-num">0</span>; i &lt; n; i += <span class="syn-num">16</span>) {
+        __m512 v1 = _mm512_loadu_ps(&amp;a[i]);
+        __m512 v2 = _mm512_loadu_ps(&amp;b[i]);
+        __m512 sum = _mm512_add_ps(v1, v2);
+        _mm512_storeu_ps(&amp;res[i], sum);
+    }
+}
+
+<span class="syn-type">int</span> <span class="syn-fn">main</span>() {
+    <span class="syn-type">constexpr size_t</span> N = <span class="syn-num">1'000'000</span>;
+    <span class="syn-kw">alignas</span>(<span class="syn-num">64</span>) std::vector&lt;<span class="syn-type">float</span>&gt; a(N, <span class="syn-num">1.5f</span>), b(N, <span class="syn-num">2.5f</span>), res(N);
+    <span class="syn-fn">add_simd_512</span>(a.data(), b.data(), res.data(), N);
+    std::cout &lt;&lt; <span class="syn-str">"[SIMD] Processed 1M Elements in record time!\\n"</span>;
+    <span class="syn-kw">return</span> <span class="syn-num">0</span>;
+}`,
+                logs: [
+                    "[BUILD] Executing: clang++ -O3 -mavx512f simd_vector_math.cpp -o simd_demo",
+                    "[INFO] Compiling AST trees and applying loop unrolling...",
+                    "[OK] Compilation completed in 0.042s (Zero warnings)",
+                    "[EXEC] Running binary ./simd_demo...",
+                    "[SIMD] Loaded 1,000,000 float32 elements into AVX-512 ZMM registers",
+                    "[SIMD] Processed 1M Elements in record time!",
+                    "[BENCHMARK] Executed in 0.084 ms | Throughput: 47.6 GB/s"
+                ]
+            },
+            allocator: {
+                fileName: 'arena_allocator.hpp',
+                code: `<span class="syn-kw">#include</span> <span class="syn-str">&lt;cstddef&gt;</span>
+<span class="syn-kw">#include</span> <span class="syn-str">&lt;memory&gt;</span>
+
+<span class="syn-kw">template</span>&lt;<span class="syn-type">size_t</span> ArenaSize&gt;
+<span class="syn-kw">class</span> <span class="syn-type">ArenaAllocator</span> {
+<span class="syn-kw">private</span>:
+    <span class="syn-type">alignas</span>(<span class="syn-num">64</span>) <span class="syn-type">std::byte</span> buffer_[ArenaSize];
+    <span class="syn-type">size_t</span> offset_ = <span class="syn-num">0</span>;
+<span class="syn-kw">public</span>:
+    <span class="syn-type">void</span>* <span class="syn-fn">allocate</span>(<span class="syn-type">size_t</span> bytes, <span class="syn-type">size_t</span> align = <span class="syn-num">16</span>) {
+        <span class="syn-type">size_t</span> aligned_offset = (offset_ + align - <span class="syn-num">1</span>) &amp; ~(align - <span class="syn-num">1</span>);
+        <span class="syn-kw">if</span> (aligned_offset + bytes &gt; ArenaSize) <span class="syn-kw">throw</span> std::bad_alloc();
+        offset_ = aligned_offset + bytes;
+        <span class="syn-kw">return</span> &amp;buffer_[aligned_offset];
+    }
+    <span class="syn-type">void</span> <span class="syn-fn">reset</span>() <span class="syn-kw">noexcept</span> { offset_ = <span class="syn-num">0</span>; }
+};`,
+                logs: [
+                    "[BUILD] Executing: clang++ -O3 -std=c++23 arena_test.cpp -o arena_demo",
+                    "[INFO] Inlining allocate() functions to zero call-stack overhead",
+                    "[OK] Compilation successful",
+                    "[EXEC] Allocating 10,000 objects in stack memory...",
+                    "[MEM] System Calls avoided: 10,000 mallocs -> 0 sys-calls",
+                    "[BENCHMARK] Total Allocation Time: 0.003 ms (100x faster than standard malloc)"
+                ]
+            },
+            hft: {
+                fileName: 'hft_lockfree_queue.hpp',
+                code: `<span class="syn-kw">#include</span> <span class="syn-str">&lt;atomic&gt;</span>
+<span class="syn-kw">#include</span> <span class="syn-str">&lt;optional&gt;</span>
+
+<span class="syn-kw">template</span>&lt;<span class="syn-kw">typename</span> T, <span class="syn-type">size_t</span> Capacity&gt;
+<span class="syn-kw">class</span> <span class="syn-type">LockFreeSPSC</span> {
+    <span class="syn-kw">alignas</span>(<span class="syn-num">64</span>) std::atomic&lt;<span class="syn-type">size_t</span>&gt; head_{<span class="syn-num">0</span>};
+    <span class="syn-kw">alignas</span>(<span class="syn-num">64</span>) std::atomic&lt;<span class="syn-type">size_t</span>&gt; tail_{<span class="syn-num">0</span>};
+    T ring_buffer_[Capacity];
+<span class="syn-kw">public</span>:
+    <span class="syn-type">bool</span> <span class="syn-fn">push</span>(<span class="syn-kw">const</span> T&amp; item) {
+        <span class="syn-type">size_t</span> t = tail_.load(std::memory_order_relaxed);
+        <span class="syn-kw">if</span> (t - head_.load(std::memory_order_acquire) == Capacity) <span class="syn-kw">return false</span>;
+        ring_buffer_[t % Capacity] = item;
+        tail_.store(t + <span class="syn-num">1</span>, std::memory_order_release);
+        <span class="syn-kw">return true</span>;
+    }
+};`,
+                logs: [
+                    "[BUILD] Executing: clang++ -O3 -pthread -std=c++23 hft_matcher.cpp -o hft_demo",
+                    "[INFO] Verifying cache line alignment (64-byte padding)...",
+                    "[OK] No False Sharing detected!",
+                    "[EXEC] Spawning Order Matcher Producer/Consumer threads...",
+                    "[HFT] Processed 5,000,000 limit orders with lock-free atomic atomic barriers",
+                    "[BENCHMARK] Average Order Latency: 320 nanoseconds"
+                ]
+            }
+        };
+
+        let currentKey = 'simd';
+
+        function loadCodeSnippet(key) {
+            currentKey = key;
+            // Update active button state
+            document.querySelectorAll('.snippet-btn').forEach(btn => {
+                btn.classList.remove('border-cyber-cyan', 'bg-cyber-cyan/10', 'text-cyber-cyan');
+                btn.classList.add('border-slate-700', 'text-slate-300');
+            });
+            
+            const activeBtn = document.getElementById(`btn-${key}`);
+            activeBtn.classList.remove('border-slate-700', 'text-slate-300');
+            activeBtn.classList.add('border-cyber-cyan', 'bg-cyber-cyan/10', 'text-cyber-cyan');
+
+            // Update file display
+            document.getElementById('activeFileName').innerHTML = `<i class="fas fa-file-code"></i> ${codeSnippets[key].fileName}`;
+            document.getElementById('cppCodeDisplay').innerHTML = codeSnippets[key].code;
+
+            // Reset terminal
+            document.getElementById('terminalConsole').innerHTML = `<div class="text-slate-500">&gt; Нажмите "Компилировать и Запустить" для старта программы...</div>`;
+            document.getElementById('execTimer').innerText = `Time: 0.00ms`;
+        }
+
+        // Initialize default code snippet
+        loadCodeSnippet('simd');
+
+        function runCppSimulation() {
+            const consoleBox = document.getElementById('terminalConsole');
+            const runBtn = document.getElementById('runCodeBtn');
+            const execTimer = document.getElementById('execTimer');
+
+            runBtn.disabled = true;
+            runBtn.classList.add('opacity-50');
+            consoleBox.innerHTML = '';
+
+            const logs = codeSnippets[currentKey].logs;
+            let index = 0;
+
+            const interval = setInterval(() => {
+                if (index < logs.length) {
+                    const logItem = document.createElement('div');
+                    const text = logs[index];
+                    
+                    if (text.includes('[BUILD]')) logItem.className = 'text-yellow-400';
+                    else if (text.includes('[OK]')) logItem.className = 'text-cyber-green font-bold';
+                    else if (text.includes('[BENCHMARK]')) logItem.className = 'text-cyber-cyan font-bold pt-1 border-t border-slate-800';
+                    else logItem.className = 'text-slate-300';
+
+                    logItem.innerText = text;
+                    consoleBox.appendChild(logItem);
+                    consoleBox.scrollTop = consoleBox.scrollHeight;
+                    index++;
+                } else {
+                    clearInterval(interval);
+                    runBtn.disabled = false;
+                    runBtn.classList.remove('opacity-50');
+                    execTimer.innerText = `Time: ${(Math.random() * 0.15 + 0.05).toFixed(3)}ms`;
+                }
+            }, 300);
+        }
+
+        // -------------------------------------------------------------
+        // Contact Shell Form Handler
+        // -------------------------------------------------------------
+        function handleShellSubmit(e) {
+            e.preventDefault();
+            const alertBox = document.getElementById('formSuccessAlert');
+            alertBox.classList.remove('hidden');
+            document.getElementById('senderName').value = '';
+            document.getElementById('senderMsg').value = '';
+
+            setTimeout(() => {
+                alertBox.classList.add('hidden');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
